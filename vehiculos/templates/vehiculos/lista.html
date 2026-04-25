@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Listado de Vehículos</h2>
+
+<!-- Filtros -->
+<form method="get">
+    <input type="text" name="placa" placeholder="Filtrar por placa" value="{{ request.GET.placa }}">
+    <input type="date" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
+    <input type="date" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
+    <select name="validado">
+        <option value="">-- Validación --</option>
+        <option value="True" {% if request.GET.validado == "True" %}selected{% endif %}>Validado</option>
+        <option value="False" {% if request.GET.validado == "False" %}selected{% endif %}>No validado</option>
+    </select>
+    <button type="submit">Filtrar</button>
+</form>
+<div class="stats">
+    <h3>Dashboard</h3>
+    <p>Total vehículos: {{ stats.total_vehiculos }}</p>
+    <p>Total facturación: ${{ stats.total_facturacion }}</p>
+    <p>Total entregas: {{ stats.total_entregas }}</p>
+    <p>Validados: {{ stats.validados }}</p>
+    <p>No validados: {{ stats.no_validados }}</p>
+</div>
+
+<!-- Tabla -->
+<table border="1">
+    <thead>
+        <tr>
+            <th>Código</th>
+            <th>Placa</th>
+            <th>Tipo</th>
+            <th>Fecha inicio</th>
+            <th>Fecha fin</th>
+            <th>Entregas</th>
+            <th>Facturación</th>
+            <th>Cliente</th>
+            <th>Validado</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for v in vehiculos %}
+        <tr>
+            <td>{{ v.codigo }}</td>
+            <td>{{ v.placa }}</td>
+            <td>{{ v.tipo_vehiculo }}</td>
+            <td>{{ v.fecha_inicio }}</td>
+            <td>{{ v.fecha_fin }}</td>
+            <td>{{ v.numero_entregas }}</td>
+            <td>{{ v.facturacion }}</td>
+            <td>{{ v.cliente }}</td>
+            <td>{{ v.validado }}</td>
+            <td>
+                <!-- Pasamos el id como string para evitar errores -->
+                <button onclick="toggleValidado('{{ v.id }}')">
+                    Cambiar
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Botón exportar -->
+<button onclick="exportar()">Exportar CSV</button>
+
+<script>
+function toggleValidado(id) {
+    fetch(`/toggle/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+            alert("Estado actualizado: " + data.validado);
+            location.reload();
+        });
+}
+
+function exportar() {
+    fetch(`/exportar/`)
+        .then(response => response.json())
+        .then(data => {
+            // Descargar el CSV
+            const blob = new Blob([data.csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "vehiculos.csv";
+            a.click();
+        });
+}
+</script>
+{% endblock %}
